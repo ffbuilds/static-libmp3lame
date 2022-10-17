@@ -6,9 +6,10 @@ ARG MP3LAME_VERSION=3.100
 ARG MP3LAME_URL="https://sourceforge.net/projects/lame/files/lame/$MP3LAME_VERSION/lame-$MP3LAME_VERSION.tar.gz/download"
 ARG MP3LAME_SHA256=ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
 
-# bump: alpine /FROM alpine:([\d.]+)/ docker:alpine|^3
-# bump: alpine link "Release notes" https://alpinelinux.org/posts/Alpine-$LATEST-released.html
-FROM alpine:3.16.2 AS base
+# Must be specified
+ARG ALPINE_VERSION
+
+FROM alpine:${ALPINE_VERSION} AS base
 
 FROM base AS download
 ARG MP3LAME_URL
@@ -33,6 +34,10 @@ RUN \
     build-base nasm && \
   ./configure --disable-shared --enable-static --enable-nasm --disable-gtktest --disable-cpml --disable-frontend && \
   make -j$(nproc) install && \
+  # Sanity tests
+  ar -t /usr/local/lib/libmp3lame.a && \
+  readelf -h /usr/local/lib/libmp3lame.a && \
+  # Cleanup
   apk del build
 
 FROM scratch
